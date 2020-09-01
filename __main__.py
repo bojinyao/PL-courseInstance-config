@@ -39,8 +39,6 @@ def _load_files(json_fp, csv_fp):
         raise RuntimeError(f"Failed to parse JSON at: \"{json_fp.name}\" with error: {err}")
     except Exception as err:
         raise RuntimeError(f"Unexpected Error: {err}")
-    finally:
-        json_fp.close()
 
     # Parse CSV file if provided
     if csv_fp is not None:
@@ -50,21 +48,37 @@ def _load_files(json_fp, csv_fp):
             raise RuntimeError(f"Failed to parse CSV at \"{csv_fp.name}\" with error: {err}")
         except Exception as err:
             raise RuntimeError(f"Unexpected Error: {err}")
-        finally:
-            csv_fp.close()
     return obj, reader
 
+def _write_json(obj, json_fp):
+    try:
+        json_fp.seek(0)
+        dump(obj, json_fp, indent=4)
+        json_fp.truncate()
+    except Exception as err:
+        raise RuntimeError(f"Unexpected Error when writing to json file: {err}")
 
-def process_csv(json_fp, csv_fp):
-    ...
-
+def process_csv(obj, reader):
+    changed = False
+    for row in reader:
+        assert row["Role"] == "Student"
+        email = row["Email Address"]
+        if email not in obj["userRoles"]:
+            obj["userRoles"][email] = "Student"
+            changed = True
+    return changed
 
 
 def main():
     parser, namespace = _parse_args()
     try:
         obj, reader = _load_files(namespace.json_path, namespace.csv_path)
+        if process_csv(obj, reader):
+            _write_json(obj, namespace.json_path)
     except RuntimeError as err:
+        namespace.json_path.close()
+        if namespace.csv_path is not None:
+            namespace.csv_path.close()
         parser.error(f"{COLORS.FAIL}{err}{COLORS.ENDC}")
 
 
