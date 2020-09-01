@@ -4,7 +4,7 @@ from json import load, dump, JSONDecodeError
 from colors import COLORS
 
 
-def parse_args():
+def _parse_args():
     UTF_8 = "UTF-8"
     parser = ArgumentParser(prog="PLCC",
                                 description="description: Module to configure infoCourseInstance.json for PrairieLearn")
@@ -31,34 +31,39 @@ def parse_args():
     return parser, namespace
     
 
-def processCSV(json_file, csv_file):
+def _load_files(json_fp, csv_fp):
+    # Parse JSON file
+    try:
+        obj = load(json_fp)
+    except JSONDecodeError as err:
+        raise RuntimeError(f"Failed to parse JSON at: \"{json_fp.name}\" with error: {err}")
+    except Exception as err:
+        raise RuntimeError(f"Unexpected Error: {err}")
+    finally:
+        json_fp.close()
+
+    # Parse CSV file if provided
+    if csv_fp is not None:
+        try:
+            reader = DictReader(csv_fp)
+        except Error as err:
+            raise RuntimeError(f"Failed to parse CSV at \"{csv_fp.name}\" with error: {err}")
+        except Exception as err:
+            raise RuntimeError(f"Unexpected Error: {err}")
+        finally:
+            csv_fp.close()
+    return obj, reader
+
+
+def process_csv(json_fp, csv_fp):
     ...
 
 
 
 def main():
-    parser, namespace = parse_args()
+    parser, namespace = _parse_args()
     try:
-        # Parse JSON file
-        try:
-            obj = load(namespace.json_path)
-        except JSONDecodeError as err:
-            raise RuntimeError(f"Failed to parse json at: \"{namespace.json_path.name}\" with error: {err}")
-        except Exception as err:
-            raise RuntimeError(f"Unexpected Error: {err}")
-        finally:
-            namespace.json_path.close()
-
-        # Parse CSV file if provided
-        if namespace.csv_path is not None:
-            try:
-                reader = DictReader(namespace.csv_path)
-            except Error as err:
-                raise RuntimeError(f"Failed to parse csv at \"{namespace.csv_path.name}\" with error: {err}")
-            except Exception as err:
-                raise RuntimeError(f"Unexpected Error: {err}")
-            finally:
-                namespace.csv_path.close()
+        obj, reader = _load_files(namespace.json_path, namespace.csv_path)
     except RuntimeError as err:
         parser.error(f"{COLORS.FAIL}{err}{COLORS.ENDC}")
 
@@ -66,7 +71,7 @@ def main():
     # cleaning up
     namespace.json_path.close()
     namespace.csv_path.close()
-    print(f"{COLORS.OKGREEN}Task finished with no error{COLORS.ENDC}")
+    print(f"{COLORS.OKGREEN}Success!{COLORS.ENDC}")
 
 
 
