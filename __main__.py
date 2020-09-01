@@ -1,13 +1,14 @@
 from argparse import ArgumentParser, FileType
 from csv import DictReader, Error
 from json import load, dump, JSONDecodeError
+from collections import OrderedDict
 from colors import COLORS
 
 
 def _parse_args():
     UTF_8 = "UTF-8"
     parser = ArgumentParser(prog="PLCC",
-                                description="description: Module to configure infoCourseInstance.json for PrairieLearn")
+                                description="description: Module to configure EXISTING infoCourseInstance.json for PrairieLearn")
 
     parser.add_argument("json_path", type=FileType("r+", encoding=UTF_8), metavar="JSON_PATH",
                             help="relative or absolute path to existing infoCourseInstance.json file")
@@ -24,14 +25,19 @@ def _parse_args():
     parser.add_argument("--addInstructors", type=str, dest="instructor_emails", nargs="+",
                             help="add instructor(s) to the class using their email(s)")
 
-    parser.add_argument("-u", "--unsorted", action="store_true",
-                            help="not sort instructors, TAs, and students by email address in alphabetical order when saving")
+    parser.add_argument("--removeUsers", type=str, dest="rm_user_emails", nargs="+",
+                            help="remove users using their email(s)") //TODO
+
+    parser.add_argument("--noGroup", action="store_true",
+                            help="not group user roles by roles")
 
     namespace = parser.parse_args()
     return parser, namespace
     
 
 def _load_files(json_fp, csv_fp):
+    assert json_fp is not None, "JSON fp is None"
+    obj, reader = None, None
     # Parse JSON file
     try:
         obj = load(json_fp)
@@ -50,7 +56,9 @@ def _load_files(json_fp, csv_fp):
             raise RuntimeError(f"Unexpected Error: {err}")
     return obj, reader
 
-def _write_json(obj, json_fp):
+def _write_json(obj : dict, json_fp):
+    assert obj is not None, "obj is None"
+    assert json_fp is not None, "json_fp is None"
     try:
         json_fp.seek(0)
         dump(obj, json_fp, indent=4)
@@ -58,30 +66,78 @@ def _write_json(obj, json_fp):
     except Exception as err:
         raise RuntimeError(f"Unexpected Error when writing to json file: {err}")
 
-def _process_csv(obj, reader):
-    changed = False
+
+def _add_user_roles(obj : dict) -> bool:
+    assert obj is not None, "obj is None"
+    if "userRoles" not in obj:
+        obj["userRoles"] = {}
+        return True
+    return False
+
+def _process_csv(obj : dict, reader : dict) -> bool:
+    assert obj is not None, "obj is None"
+    if not reader: return False
+    changed = _add_user_roles(obj)
+    pl_roles = obj["userRoles"]
     for row in reader:
-        assert row["Role"] == "Student"
         email = row["Email Address"]
-        if email not in obj["userRoles"]:
-            obj["userRoles"][email] = "Student"
+        if email not in pl_roles:
+            pl_roles[email] = _canvas_to_PL_roles(row["Role"])
             changed = True
     return changed
 
+def _process_add_users(obj : dict, students : list, tas : list, instructors : list) -> bool:
+    assert obj is not None, "obj is None"
+    new_users = {
+        "Student" : students,
+        "TA" : tas,
+        "Instructor" : instructors
+    }
+    changed = _add_user_roles(obj)
+    pl_roles = obj["userRoles"]
+    for role, emails in new_users.items():
+        if emails is not None:
+            for e in emails:
+                if e not in pl_roles:
+                    pl_roles[e] = role
+                    changed = True
+    return changed
+            
+
+def _canvas_to_PL_roles(canvas_role : str):
+    assert canvas_role is not None, "canvas_role is None"
+    assert canvas_role != "", "canvas_role is empty string"
+    canvas_role = canvas_role.strip()
+    if canvas_role in ("Student", "Waitlist Student"):
+        return "Student"
+    elif canvas_role in ("Teacher", "Lead TA"):
+        return "Instructor"
+    else:
+        return "TA"
+
 
 def main():
-    parser, namespace = _parse_args()
+    parser, ns = _parse_args()
     try:
-        obj, reader = _load_files(namespace.json_path, namespace.csv_path)
-        if _process_csv(obj, reader):
-            _write_json(obj, namespace.json_path)
+        # Main Logic
+        obj, reader = _load_files(ns.json_path, ns.csv_path)
+        procedures = [
+            _process_csv(obj, reader),
+            _process_add_users(obj, ns.student_emails, ns.ta_emails, ns.instructor_emails)
+        ]
+        if sum(procedures) > 0 or not ns.noGroup:
+            if not ns.noGroup:
+                obj["userRoles"] = OrderedDict(sorted(obj["userRoles"].items(), key=lambda item: item[1]))
+            _write_json(obj, ns.json_path)
         print(f"{COLORS.OKGREEN}Success!{COLORS.ENDC}")
     except RuntimeError as err:
         parser.error(f"{COLORS.FAIL}{err}{COLORS.ENDC}")
+    except AssertionError as err:
+        parser.error(f"{COLORS.FAIL}Internal Error: {err}{COLORS.ENDC}")
     finally:
-        namespace.json_path.close()
-        if namespace.csv_path is not None:
-            namespace.csv_path.close()
+        ns.json_path.close()
+        if ns.csv_path is not None:
+            ns.csv_path.close()
 
 
 if __name__ == "__main__":
