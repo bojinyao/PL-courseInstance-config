@@ -58,7 +58,7 @@ def _write_json(obj, json_fp):
     except Exception as err:
         raise RuntimeError(f"Unexpected Error when writing to json file: {err}")
 
-def process_csv(obj, reader):
+def _process_csv(obj, reader):
     changed = False
     for row in reader:
         assert row["Role"] == "Student"
@@ -73,20 +73,15 @@ def main():
     parser, namespace = _parse_args()
     try:
         obj, reader = _load_files(namespace.json_path, namespace.csv_path)
-        if process_csv(obj, reader):
+        if _process_csv(obj, reader):
             _write_json(obj, namespace.json_path)
+        print(f"{COLORS.OKGREEN}Success!{COLORS.ENDC}")
     except RuntimeError as err:
+        parser.error(f"{COLORS.FAIL}{err}{COLORS.ENDC}")
+    finally:
         namespace.json_path.close()
         if namespace.csv_path is not None:
             namespace.csv_path.close()
-        parser.error(f"{COLORS.FAIL}{err}{COLORS.ENDC}")
-
-
-    # cleaning up
-    namespace.json_path.close()
-    namespace.csv_path.close()
-    print(f"{COLORS.OKGREEN}Success!{COLORS.ENDC}")
-
 
 
 if __name__ == "__main__":
