@@ -26,7 +26,7 @@ def _parse_args():
                             help="add instructor(s) to the class using their email(s)")
 
     parser.add_argument("--removeUsers", type=str, dest="rm_user_emails", nargs="+",
-                            help="remove users using their email(s)") //TODO
+                            help="remove users using their email(s)")
 
     parser.add_argument("--noGroup", action="store_true",
                             help="not group user roles by roles")
@@ -104,7 +104,7 @@ def _process_add_users(obj : dict, students : list, tas : list, instructors : li
     return changed
             
 
-def _canvas_to_PL_roles(canvas_role : str):
+def _canvas_to_PL_roles(canvas_role : str) -> str:
     assert canvas_role is not None, "canvas_role is None"
     assert canvas_role != "", "canvas_role is empty string"
     canvas_role = canvas_role.strip()
@@ -135,6 +135,7 @@ def main():
     except AssertionError as err:
         parser.error(f"{COLORS.FAIL}Internal Error: {err}{COLORS.ENDC}")
     finally:
+        # cleaning up
         ns.json_path.close()
         if ns.csv_path is not None:
             ns.csv_path.close()
