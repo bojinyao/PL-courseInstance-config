@@ -3,7 +3,7 @@ from csv import DictReader, Error
 from json import load, dump, JSONDecodeError
 from collections import OrderedDict
 from colors import Colors
-from obj_manager import ObjManager
+from obj_manager import RolesManager
 
 
 def _parse_args():
@@ -73,7 +73,7 @@ def main():
     try:
         # Main Logic
         obj, reader = _load_files(ns.json_path, ns.csv_path)
-        mgr = ObjManager(obj)
+        mgr = RolesManager(obj)
         mgr.process_csv(reader)
         mgr.process_add_users(ns.student_emails, ns.ta_emails, ns.instructor_emails)
         

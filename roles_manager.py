@@ -1,6 +1,6 @@
 from util import _canvas_to_PL_roles
 
-class ObjManager:
+class RolesManager:
 
     def __init__(self, obj : dict):
         assert obj is not None, "ObjManager: obj cannot be None"
