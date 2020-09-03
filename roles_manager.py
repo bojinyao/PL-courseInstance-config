@@ -8,18 +8,18 @@ class RolesManager:
         self.__obj = obj
         self.__warnings = []
         self.__changed = False
+        self.__modifid = 0
+        self.__added = 0
+        self.__deleted = 0
         # function calls
-        self.__add_user_roles()
+        self.__add_userRoles()
 
     def process_csv(self, reader : dict):
         if not reader: 
             return
-        pl_roles = self.__obj["userRoles"]
         for row in reader:
             email = row["Email Address"]
-            if email not in pl_roles:
-                pl_roles[email] = _canvas_to_PL_roles(row["Role"])
-                self.__changed = True
+            self.__update_role(email, row["Role"])
 
     def process_add_users(self, students : list, tas : list, instructors : list):
         new_users = {
@@ -27,16 +27,25 @@ class RolesManager:
             "TA" : tas,
             "Instructor" : instructors
         }
-
-        pl_roles = self.__obj["userRoles"]
         for role, emails in new_users.items():
             if emails is not None:
                 for e in emails:
-                    if e not in pl_roles:
-                        pl_roles[e] = role
-                        self.__changed = True
+                    self.__update_role(e, role)
 
-    def __add_user_roles(self):
+    def __update_role(self, email : str, canvas_role : str):
+        pl_roles = self.__obj["userRoles"]
+        des_role = _canvas_to_PL_roles(canvas_role)
+        if email in pl_roles:
+            cur_role = pl_roles[email]
+            if cur_role != des_role:
+                self.__add_warning(f"\"{email}\" role changed from \"{cur_role}\" to \"{des_role}\"")
+                pl_roles[email] = des_role
+                self.__changed = True
+        else:
+            pl_roles[email] = des_role
+            self.__changed = True
+
+    def __add_userRoles(self):
         if "userRoles" not in self.__obj:
             self.__obj["userRoles"] = {}
             self.__changed = True
@@ -50,5 +59,17 @@ class RolesManager:
     def iter_warnings(self):
         return self.__warnings.__iter__()
 
+    def __add_warning(self, msg : str):
+        self.__warnings.append(msg)
+
     def clear_warnings(self):
         self.__warnings = []
+
+    def get_modified(self):
+        return self.__modifid
+
+    def get_added(self):
+        return self.__added
+
+    def get_deleted(self):
+        return self.__deleted

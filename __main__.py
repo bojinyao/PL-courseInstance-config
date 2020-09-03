@@ -3,7 +3,7 @@ from csv import DictReader, Error
 from json import load, dump, JSONDecodeError
 from collections import OrderedDict
 from colors import Colors
-from obj_manager import RolesManager
+from roles_manager import RolesManager
 
 
 def _parse_args():
