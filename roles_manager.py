@@ -14,6 +14,10 @@ class RolesManager:
         # function calls
         self.__add_userRoles()
 
+# ======================================================== #
+# ========================== API ========================= #
+# ======================================================== #
+
     def process_csv(self, reader : dict):
         if not reader: 
             return
@@ -31,6 +35,31 @@ class RolesManager:
             if emails is not None:
                 for e in emails:
                     self.__update_role(e, role)
+
+    def is_changed(self) -> bool:
+        return self.__changed
+
+    def has_warnings(self) -> bool:
+        return len(self.__warnings) > 0
+
+    def iter_warnings(self):
+        return self.__warnings.__iter__()
+
+    def clear_warnings(self):
+        self.__warnings = []
+
+    def get_modified(self):
+        return self.__modifid
+
+    def get_added(self):
+        return self.__added
+
+    def get_deleted(self):
+        return self.__deleted
+
+# ======================================================== #
+# ======================== Helper ======================== #
+# ======================================================== #
 
     def __update_role(self, email : str, canvas_role : str):
         pl_roles = self.__obj["userRoles"]
@@ -50,26 +79,5 @@ class RolesManager:
             self.__obj["userRoles"] = {}
             self.__changed = True
 
-    def is_changed(self) -> bool:
-        return self.__changed
-
-    def has_warnings(self) -> bool:
-        return len(self.__warnings) > 0
-
-    def iter_warnings(self):
-        return self.__warnings.__iter__()
-
     def __add_warning(self, msg : str):
         self.__warnings.append(msg)
-
-    def clear_warnings(self):
-        self.__warnings = []
-
-    def get_modified(self):
-        return self.__modifid
-
-    def get_added(self):
-        return self.__added
-
-    def get_deleted(self):
-        return self.__deleted
