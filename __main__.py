@@ -76,6 +76,7 @@ def main():
         mgr = RolesManager(obj)
         mgr.process_csv(reader)
         mgr.process_add_users(ns.student_emails, ns.ta_emails, ns.instructor_emails)
+        mgr.process_remove_users(ns.rm_user_emails)
         
         if mgr.is_changed() or not ns.noGroup:
             if not ns.noGroup:

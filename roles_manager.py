@@ -36,6 +36,12 @@ class RolesManager:
                 for e in emails:
                     self.__update_role(e, role)
 
+    def process_remove_users(self, emails : list):
+        if not emails:
+            return
+        for e in emails:
+            self.__remove_role(e)
+
     def is_changed(self) -> bool:
         return self.__changed
 
@@ -69,9 +75,20 @@ class RolesManager:
             if cur_role != des_role:
                 self.__add_warning(f"\"{email}\" role changed from \"{cur_role}\" to \"{des_role}\"")
                 pl_roles[email] = des_role
+                self.__modifid += 1
                 self.__changed = True
         else:
             pl_roles[email] = des_role
+            self.__added += 1
+            self.__changed = True
+
+    def __remove_role(self, email : str):
+        pl_roles = self.__obj["userRoles"]
+        if email not in pl_roles:
+            self.__add_warning(f"\"{email}\" not found in \"userRoles\"")
+        else:
+            del pl_roles[email]
+            self.__deleted += 1
             self.__changed = True
 
     def __add_userRoles(self):
