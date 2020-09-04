@@ -29,8 +29,8 @@ class RoleGroups(MutableMapping):
     def __setitem__(self, key : str, value : str):
         if not isinstance(key, str):
             raise TypeError(f"{key} is not of type str")
-        if not isinstance(value, str):
-            raise TypeError(f"{value} is not of type str")
+        if value not in ("Instructor", "TA", "Student"):
+            raise AssertionError(f"Unknown role: \"{value}\"")
         try:
             cur_role = self.__getitem__(key)
             if cur_role == value:
