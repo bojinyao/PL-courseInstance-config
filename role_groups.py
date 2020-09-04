@@ -4,15 +4,26 @@ from itertools import chain
 
 class RoleGroups(MutableMapping):
 
-    def __init__(self, obj : dict):
-        assert obj is not None, "RoleGroups: obj is None"
+    def __init__(self, userRoles : dict):
+        assert userRoles is not None, "RoleGroups: obj is None"
         self.__instructors = OrderedDict()
         self.__tas = OrderedDict()
         self.__students = OrderedDict()
 
-        for email, role in obj.items():
+        self.__regrouped = False
+        role_state = "Instructor"
+        for email, role in userRoles.items():
             group = self.__fetch_group(role)
             group[email] = role
+            if role != role_state:
+                if (role_state == "Instructor" and role == "TA") \
+                    or (role_state == "TA" and role == "Student"):
+                    role_state = role
+                else:
+                    self.__regrouped = True
+
+    def is_regrouped(self) -> bool:
+        return self.__regrouped
 
     def __getitem__(self, key : str):
         if not isinstance(key, str):
@@ -74,4 +85,3 @@ class RoleGroups(MutableMapping):
             return self.__students
         else:
             raise AssertionError(f"Unknown role \"{role}\"")
-

@@ -1,22 +1,38 @@
 from util import _canvas_to_PL_roles
+from role_groups import RoleGroups
+from collections import OrderedDict
 
 class RolesManager:
 
-    def __init__(self, obj : dict):
+    def __init__(self, obj : dict, group_by_roles : bool):
         assert obj is not None, "ObjManager: obj cannot be None"
         # attributes
-        self.__obj = obj
         self.__warnings = []
         self.__changed = False
         self.__modifid = 0
         self.__added = 0
         self.__deleted = 0
-        # function calls
-        self.__add_userRoles()
+        # preprocess
+        if "userRoles" not in obj:
+            obj["userRoles"] = {}
+            self.__changed = True
+
+        if group_by_roles:
+            roles = RoleGroups(obj["userRoles"])
+            obj["userRoles"] = roles
+            self.__changed = roles.is_regrouped()
+        self.__pl_roles = obj["userRoles"]
+
+        # DO NOT USE
+        self.__obj = obj
 
 # ======================================================== #
 # ========================== API ========================= #
 # ======================================================== #
+    # Due to difficulty of making RoleGroup serializable,
+    # using finalize to simplify things
+    def finalize(self):
+        self.__obj["userRoles"] = OrderedDict(self.__pl_roles)
 
     def process_csv(self, reader : dict):
         if not reader: 
@@ -68,32 +84,25 @@ class RolesManager:
 # ======================================================== #
 
     def __update_role(self, email : str, canvas_role : str):
-        pl_roles = self.__obj["userRoles"]
         des_role = _canvas_to_PL_roles(canvas_role)
-        if email in pl_roles:
-            cur_role = pl_roles[email]
+        if email in self.__pl_roles:
+            cur_role = self.__pl_roles[email]
             if cur_role != des_role:
                 self.__add_warning(f"\"{email}\" role changed from \"{cur_role}\" to \"{des_role}\"")
-                pl_roles[email] = des_role
+                self.__pl_roles[email] = des_role
                 self.__modifid += 1
                 self.__changed = True
         else:
-            pl_roles[email] = des_role
+            self.__pl_roles[email] = des_role
             self.__added += 1
             self.__changed = True
 
     def __remove_role(self, email : str):
-        pl_roles = self.__obj["userRoles"]
-        if email not in pl_roles:
+        if email not in self.__pl_roles:
             self.__add_warning(f"\"{email}\" not found in \"userRoles\"")
         else:
-            del pl_roles[email]
+            del self.__pl_roles[email]
             self.__deleted += 1
-            self.__changed = True
-
-    def __add_userRoles(self):
-        if "userRoles" not in self.__obj:
-            self.__obj["userRoles"] = {}
             self.__changed = True
 
     def __add_warning(self, msg : str):
