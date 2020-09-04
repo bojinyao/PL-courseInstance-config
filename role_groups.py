@@ -1,5 +1,6 @@
 from collections.abc import MutableMapping
 from collections import OrderedDict
+from itertools import chain
 
 class RoleGroups(MutableMapping):
 
@@ -10,14 +11,8 @@ class RoleGroups(MutableMapping):
         self.__students = OrderedDict()
 
         for email, role in obj.items():
-            if role == "Instructor":
-                self.__instructors[email] = "Instructor"
-            elif role == "TA":
-                self.__tas[email] = "TA"
-            elif role == "Student":
-                self.__students[email] = "Student"
-            else:
-                raise AssertionError(f"Unknown role: \"{role}\"")
+            group = self.__fetch_group(role)
+            group[email] = role
 
     def __getitem__(self, key : str):
         if not isinstance(key, str):
@@ -36,20 +31,47 @@ class RoleGroups(MutableMapping):
             raise TypeError(f"{key} is not of type str")
         if not isinstance(value, str):
             raise TypeError(f"{value} is not of type str")
-        if value == "Instructor":
-            self.__instructors[key] = "Instructor"
-        elif value == "TA":
-            self.__tas[key] = "TA"
-        elif value == "Student":
-            self.__students[key] = "Student"
-        else:
-            raise TypeError(f"Unknown role \"{value}\"")
+        try:
+            cur_role = self.__getitem__(key)
+            if cur_role == value:
+                # not change to role
+                return
+            # role change
+            cur_group = self.__fetch_group(cur_role)
+            del cur_group[key]
+            dest_group = self.__fetch_group(value)
+            dest_group[key] = value
+        except KeyError:
+            # new key
+            group = self.__fetch_group(value)
+            group[key] = value
+
 
     def __delitem__(self, key : str):
-        ...
+        if not isinstance(key, str):
+            raise TypeError(f"{key} is not of type str")
+        if key in self.__instructors:
+            del self.__instructors[key]
+        elif key in self.__tas:
+            del self.__tas[key]
+        elif key in self.__students:
+            del self.__students[key]
+        else:
+            raise KeyError(f"'{key}'")
 
     def __iter__(self):
-        ...
+        return chain(self.__instructors, self.__tas, self.__students)
 
     def __len__(self):
-        ...
+        return len(self.__instructors) + len(self.__tas) + len(self.__students)
+
+    def __fetch_group(self, role : str):
+        if role == "Instructor":
+            return self.__instructors
+        elif role == "TA":
+            return self.__tas
+        elif role == "Student":
+            return self.__students
+        else:
+            raise AssertionError(f"Unknown role \"{role}\"")
+
