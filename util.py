@@ -1,12 +1,13 @@
 from enum import Enum
 
+
 class PLGroups(Enum):
     INSTRUCTOR = "Instructor"
     TA = "TA"
     STUDENT = "Student"
 
 
-def _canvas_to_PL_roles(canvas_role : str) -> str:
+def _canvas_to_PL_roles(canvas_role: str) -> str:
     assert canvas_role is not None, "canvas_role is None"
     assert canvas_role != "", "canvas_role is empty string"
     canvas_role = canvas_role.strip()

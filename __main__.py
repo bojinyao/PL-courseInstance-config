@@ -1,40 +1,71 @@
 from argparse import ArgumentParser, FileType
 from csv import DictReader, Error
 from json import load, dump, JSONDecodeError
-from collections import OrderedDict
 from colors import Colors
 from roles_manager import RolesManager
 
 
 def _parse_args():
     UTF_8 = "UTF-8"
-    parser = ArgumentParser(prog="PLCC",
-                                description="description: Module to configure EXISTING infoCourseInstance.json for PrairieLearn")
+    parser = ArgumentParser(
+        prog="PLCC",
+        description="description: Module to configure EXISTING infoCourseInstance.json for PrairieLearn",
+    )
 
-    parser.add_argument("json_path", type=FileType("r+", encoding=UTF_8), metavar="JSON_PATH",
-                            help="relative or absolute path to existing infoCourseInstance.json file")
+    parser.add_argument(
+        "json_path",
+        type=FileType("r+", encoding=UTF_8),
+        metavar="JSON_PATH",
+        help="relative or absolute path to existing infoCourseInstance.json file",
+    )
 
-    parser.add_argument("-c", "--csv", type=FileType("r", encoding=UTF_8), dest="csv_path",
-                            help="relative or absolute path to roster csv file from Canvas")
+    parser.add_argument(
+        "-c",
+        "--csv",
+        type=FileType("r", encoding=UTF_8),
+        dest="csv_path",
+        help="relative or absolute path to roster csv file from Canvas",
+    )
 
-    parser.add_argument("--addStudents", type=str, dest="student_emails", nargs="+",
-                            help="add student(s) to the class using their email(s)")
+    parser.add_argument(
+        "--addStudents",
+        type=str,
+        dest="student_emails",
+        nargs="+",
+        help="add student(s) to the class using their email(s)",
+    )
 
-    parser.add_argument("--addTAs", type=str, dest="ta_emails", nargs="+",
-                            help="add TA(s) to the class using their email(s)")
+    parser.add_argument(
+        "--addTAs",
+        type=str,
+        dest="ta_emails",
+        nargs="+",
+        help="add TA(s) to the class using their email(s)",
+    )
 
-    parser.add_argument("--addInstructors", type=str, dest="instructor_emails", nargs="+",
-                            help="add instructor(s) to the class using their email(s)")
+    parser.add_argument(
+        "--addInstructors",
+        type=str,
+        dest="instructor_emails",
+        nargs="+",
+        help="add instructor(s) to the class using their email(s)",
+    )
 
-    parser.add_argument("--removeUsers", type=str, dest="rm_user_emails", nargs="+",
-                            help="remove users using their email(s)")
+    parser.add_argument(
+        "--removeUsers",
+        type=str,
+        dest="rm_user_emails",
+        nargs="+",
+        help="remove users using their email(s)",
+    )
 
-    parser.add_argument("--nogroup", action="store_true",
-                            help="not group user roles by roles")
+    parser.add_argument(
+        "--nogroup", action="store_true", help="not group user roles by roles"
+    )
 
     namespace = parser.parse_args()
     return parser, namespace
-    
+
 
 def _load_files(json_fp, csv_fp):
     assert json_fp is not None, "JSON fp is None"
@@ -43,7 +74,9 @@ def _load_files(json_fp, csv_fp):
     try:
         obj = load(json_fp)
     except JSONDecodeError as err:
-        raise RuntimeError(f"Failed to parse JSON at: \"{json_fp.name}\" with error: {err}")
+        raise RuntimeError(
+            f'Failed to parse JSON at: "{json_fp.name}" with error: {err}'
+        )
     except Exception as err:
         raise RuntimeError(f"Unexpected Error: {err}")
 
@@ -52,12 +85,15 @@ def _load_files(json_fp, csv_fp):
         try:
             reader = DictReader(csv_fp)
         except Error as err:
-            raise RuntimeError(f"Failed to parse CSV at \"{csv_fp.name}\" with error: {err}")
+            raise RuntimeError(
+                f'Failed to parse CSV at "{csv_fp.name}" with error: {err}'
+            )
         except Exception as err:
             raise RuntimeError(f"Unexpected Error: {err}")
     return obj, reader
 
-def _write_json(obj : dict, json_fp):
+
+def _write_json(obj: dict, json_fp):
     assert obj is not None, "obj is None"
     assert json_fp is not None, "json_fp is None"
     try:
@@ -86,7 +122,11 @@ def main():
 
         if mgr.is_changed():
             _write_json(obj, ns.json_path)
-            print(f"""Task done with {Colors.OKGREEN}{mgr.get_added()} added{Colors.ENDC}, {Colors.OKBLUE}{mgr.get_modified()} modified{Colors.ENDC}, {Colors.FAIL}{mgr.get_deleted()} deleted{Colors.ENDC}""")
+            print(
+                f"Task done with {Colors.OKGREEN}{mgr.get_added()} \
+                    added{Colors.ENDC}, {Colors.OKBLUE}{mgr.get_modified()} modified{Colors.ENDC}, \
+                    {Colors.FAIL}{mgr.get_deleted()} deleted{Colors.ENDC}"
+            )
         else:
             print(f"{Colors.OKGREEN}No changes made{Colors.ENDC}")
     except RuntimeError as err:
