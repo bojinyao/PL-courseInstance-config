@@ -5,6 +5,10 @@ from colors import Colors
 from roles_manager import RolesManager
 
 
+CANVAS_CSV_EMAIL_COL_DEFAULT = "Email Address"
+CANVAS_CSV_ROLE_COL_DEFAULT = "Role"
+
+
 def _parse_args():
     UTF_8 = "UTF-8"
     parser = ArgumentParser(
@@ -19,12 +23,28 @@ def _parse_args():
         help="relative or absolute path to existing infoCourseInstance.json file",
     )
 
-    parser.add_argument(
+    csv_group = parser.add_argument_group(title="csv options")
+
+    csv_group.add_argument(
         "-c",
         "--csv",
         type=FileType("r", encoding=UTF_8),
         dest="csv_path",
         help="relative or absolute path to roster csv file from Canvas",
+    )
+    
+    csv_group.add_argument(
+        "--emailColumn",
+        type=str,
+        default=CANVAS_CSV_EMAIL_COL_DEFAULT,
+        help="column name for user emails"
+    )
+    
+    csv_group.add_argument(
+        "--roleColumn",
+        type=str,
+        default=CANVAS_CSV_ROLE_COL_DEFAULT,
+        help="column name for user roles"
     )
 
     parser.add_argument(
@@ -110,7 +130,7 @@ def main():
         # Main Logic
         obj, reader = _load_files(ns.json_path, ns.csv_path)
         mgr = RolesManager(obj, not ns.nogroup)
-        mgr.process_csv(reader)
+        mgr.process_csv(reader, ns.emailColumn, ns.roleColumn)
         mgr.process_add_users(ns.student_emails, ns.ta_emails, ns.instructor_emails)
         mgr.process_remove_users(ns.rm_user_emails)
         mgr.finalize()
@@ -123,9 +143,9 @@ def main():
         if mgr.is_changed():
             _write_json(obj, ns.json_path)
             print(
-                f"Task done with {Colors.OKGREEN}{mgr.get_added()} \
-                    added{Colors.ENDC}, {Colors.OKBLUE}{mgr.get_modified()} modified{Colors.ENDC}, \
-                    {Colors.FAIL}{mgr.get_deleted()} deleted{Colors.ENDC}"
+                f"Task done with {Colors.OKGREEN}{mgr.get_added()} "\
+                    f"added{Colors.ENDC}, {Colors.OKBLUE}{mgr.get_modified()} modified{Colors.ENDC}, "\
+                    f"{Colors.FAIL}{mgr.get_deleted()} deleted{Colors.ENDC}"
             )
         else:
             print(f"{Colors.OKGREEN}No changes made{Colors.ENDC}")

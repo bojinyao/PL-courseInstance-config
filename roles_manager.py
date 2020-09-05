@@ -34,12 +34,18 @@ class RolesManager:
     def finalize(self):
         self.__obj["userRoles"] = OrderedDict(self.__pl_roles)
 
-    def process_csv(self, reader: dict):
+    def process_csv(self, reader: dict, email_col: str, role_col: str):
         if not reader:
             return
         for row in reader:
-            email = row["Email Address"]
-            self.__update_role(email, row["Role"])
+            try:
+                email = row[email_col]
+            except KeyError:
+                raise RuntimeError(f"Invalid Email Column: '{email_col}'")
+            try:
+                self.__update_role(email, row[role_col])
+            except KeyError:
+                raise RuntimeError(f"Invalid Role Column: '{role_col}")
 
     def process_add_users(self, students: list, tas: list, instructors: list):
         new_users = {"Student": students, "TA": tas, "Instructor": instructors}
