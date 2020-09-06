@@ -37,14 +37,14 @@ def _parse_args():
         "--emailColumn",
         type=str,
         default=CANVAS_CSV_EMAIL_COL_DEFAULT,
-        help="column name for user emails"
+        help="column name for user emails",
     )
     
     csv_group.add_argument(
         "--roleColumn",
         type=str,
         default=CANVAS_CSV_ROLE_COL_DEFAULT,
-        help="column name for user roles"
+        help="column name for user roles",
     )
 
     parser.add_argument(
