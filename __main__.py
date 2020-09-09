@@ -140,14 +140,19 @@ def main():
                 print(f"{Colors.WARNING}{msg}{Colors.ENDC}")
             mgr.clear_warnings()
 
+        num_added = mgr.get_added()
+        num_modified = mgr.get_modified()
+        num_deleted = mgr.get_deleted()
+
         if mgr.is_changed():
             _write_json(obj, ns.json_path)
             print(
-                f"Task done with {Colors.OKGREEN}{mgr.get_added()} "\
-                    f"added{Colors.ENDC}, {Colors.OKBLUE}{mgr.get_modified()} modified{Colors.ENDC}, "\
-                    f"{Colors.FAIL}{mgr.get_deleted()} deleted{Colors.ENDC}"
+                f"Task done with {Colors.OKGREEN}{num_added} "\
+                    f"added{Colors.ENDC}, {Colors.OKBLUE}{num_modified} modified{Colors.ENDC}, "\
+                    f"{Colors.FAIL}{num_deleted} deleted{Colors.ENDC}"
             )
         else:
+            assert num_added == num_modified == num_deleted == 0, f"Change not reported"
             print(f"{Colors.OKGREEN}No changes made{Colors.ENDC}")
     except RuntimeError as err:
         parser.error(f"{Colors.FAIL}{err}{Colors.ENDC}")
